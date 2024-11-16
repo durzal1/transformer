@@ -16,7 +16,7 @@ class SelfAttention(nn.Module):
         self.fc = nn.Linear(k,k)
 
 
-    def forward(self, queries, keys, vals):
+    def forward(self, queries, keys, vals, mask):
         batches = queries.shape[0]
         tokens = queries.shape[1]
 
@@ -42,6 +42,12 @@ class SelfAttention(nn.Module):
 
         x = x / self.head_dim ** .5
 
+        # Apply the mask, if provided
+        if mask is not None:
+            # Expand mask to match (batches * heads, tokens, tokens)
+            # mask = mask.unsqueeze(1).repeat(self.heads, 1, 1)
+            x = x.masked_fill(mask == 0, float('-1e20'))
+
         x = torch.softmax(x,dim=-1)
 
         x = torch.bmm(x,vals) # make vals part of it
@@ -54,9 +60,12 @@ class SelfAttention(nn.Module):
 
         return x
 
-q = torch.rand(2,16,24)
-k = torch.rand(2,16,24)
-v = torch.rand(2,16,24)
-attention = SelfAttention(24,4)
-output = attention(q,k,v)
-print(output)
+
+
+
+# q = torch.rand(2,16,24)
+# k = torch.rand(2,16,24)
+# v = torch.rand(2,16,24)
+# attention = SelfAttention(24,4)
+# output = attention(q,k,v)
+# print(output)
